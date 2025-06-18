@@ -1,0 +1,26 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# Maven Wrapper script for Unix
+# -----------------------------------------------------------------------------
+# This script is a copy of the official Maven Wrapper script.
+# It downloads and runs the Maven Wrapper jar to execute Maven commands.
+# -----------------------------------------------------------------------------
+
+# Determine the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Wrapper jar location
+WRAPPER_JAR="$SCRIPT_DIR/.mvn/wrapper/maven-wrapper.jar"
+
+# Wrapper properties location
+WRAPPER_PROPERTIES="$SCRIPT_DIR/.mvn/wrapper/maven-wrapper.properties"
+
+# Check if wrapper jar exists, if not download it
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Downloading Maven Wrapper jar..."
+  mkdir -p "$(dirname "$WRAPPER_JAR")"
+  curl -fsSL https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.5.6/maven-wrapper-0.5.6.jar -o "$WRAPPER_JAR"
+fi
+
+# Execute the Maven Wrapper jar with passed arguments
+java -jar "$WRAPPER_JAR" -Dmaven.multiModuleProjectDirectory="$SCRIPT_DIR" -Dmaven.home="$MAVEN_HOME" "$@"
