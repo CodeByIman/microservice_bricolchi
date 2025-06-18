@@ -1,72 +1,147 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowLeft, Shield, Users, Clock, Hammer, CheckCircle, Wrench, Home } from 'lucide-react';
 
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext'; // Retiré AuthProvider - pas besoin ici
+
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '', // ✅ CORRIGÉ: changé de 'email' à 'username'
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (errors[name]) {
+  console.log("🔍 LoginPage - State actuel:", {
+    formData,
+    errors,
+    error,
+    success,
+    isLoading
+  });
+
+  const handleChange = e => {
+    console.log("📝 HandleChange appelé:", {
+      name: e.target.name,
+      value: e.target.value,
+      previousFormData: formData
+    });
+    
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    
+    // Effacer les erreurs quand l'utilisateur tape
+    if (errors[e.target.name]) {
+      console.log("🧹 Effacement de l'erreur pour:", e.target.name);
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        [e.target.name]: ''
       }));
     }
   };
 
   const validateForm = () => {
+    console.log("✅ Validation du formulaire avec:", formData);
     const newErrors = {};
     
-    if (!formData.email) {
-      newErrors.email = 'Email requis';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email invalide';
+    // ✅ CORRIGÉ: validation pour username au lieu d'email
+    if (!formData.username) {
+      newErrors.username = 'Nom d\'utilisateur requis';
+      console.log("❌ Erreur: Username manquant");
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Minimum 3 caractères';
+      console.log("❌ Erreur: Username trop court");
     }
     
     if (!formData.password) {
       newErrors.password = 'Mot de passe requis';
-    } else if (formData.password.length < 6) {
+      console.log("❌ Erreur: Password manquant");
+    } else if (formData.password.length < 2) {
       newErrors.password = 'Minimum 6 caractères';
+      console.log("❌ Erreur: Password trop court");
     }
     
+    console.log("📋 Résultat validation:", newErrors);
     return newErrors;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    const formErrors = validateForm();
+    console.log("🚀 HandleSubmit appelé");
+    console.log("📤 Données du formulaire avant soumission:", formData);
     
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
+    setError("");
+    setSuccess(false);
+    
+    // Validation
+    const newErrors = validateForm();
+    if (Object.keys(newErrors).length > 0) {
+      console.log("❌ Erreurs de validation trouvées:", newErrors);
+      setErrors(newErrors);
       return;
     }
     
     setIsLoading(true);
-    setTimeout(() => {
-      console.log('Login:', formData);
+    console.log("⏳ Début de la requête API...");
+    
+    try {
+      // ✅ CORRIGÉ: Utiliser username au lieu d'email
+      const requestData = {
+        username: formData.username.trim(), // ✅ CORRIGÉ: maintenant username
+        password: formData.password.trim()
+      };
+      
+      console.log("📡 Données envoyées à l'API:", requestData);
+      
+      const response = await axios.post(
+        "http://localhost:8081/api/auth/login", 
+        requestData
+      );
+      
+      console.log("✅ Réponse API reçue:", response.data);
+      
+      setSuccess(true);
+      login(response.data);
+      
+      console.log("🎉 Login réussi, redirection dans 1 seconde...");
+      setTimeout(() => {
+        navigate("/profile");
+      }, 1000);
+      
+    } catch (err) {
+      console.log("❌ Erreur API:", err);
+      console.log("📄 Détails de l'erreur:", {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
+      
+      const serverMessage = err.response?.data?.message || err.response?.data?.error;
+      const errorMessage = serverMessage || "Invalid username or password"; // ✅ CORRIGÉ: message d'erreur
+      console.log("💬 Message d'erreur affiché:", errorMessage);
+      setError(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+      console.log("🏁 Requête terminée");
+    }
   };
 
   const handleBackToHome = () => {
-    // Navigate to home page
-    window.location.href = '/';
+    console.log("🏠 Redirection vers accueil");
+    navigate('/'); // Utiliser navigate au lieu de window.location.href
   };
 
   const handleRegisterRedirect = () => {
-    // Navigate to register page
-    window.location.href = '/register';
+    console.log("📝 Redirection vers inscription");
+    navigate('/register'); // Utiliser navigate au lieu de window.location.href
   };
+
+  console.log("🎨 Rendu du composant LoginPage");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex">
@@ -87,8 +162,6 @@ const LoginPage = () => {
             <h1 className="text-4xl font-bold mb-3 tracking-tight">BricolChi</h1>
             <p className="text-white/90 text-lg font-medium">Votre plateforme de services à domicile</p>
           </div>
-
-          {/* */}
 
           {/* Points forts alignés horizontalement */}
           <div className="grid grid-cols-3 gap-8 w-full max-w-md">
@@ -139,29 +212,43 @@ const LoginPage = () => {
 
             {/* Formulaire avec espacement uniforme */}
             <div className="px-8 py-8">
-              <div className="space-y-6">
-                {/* Email */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Messages d'erreur et de succès */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                    <p className="text-sm font-medium">{error}</p>
+                  </div>
+                )}
+                
+                {success && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center">
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    <p className="text-sm font-medium">Connexion réussie ! Redirection...</p>
+                  </div>
+                )}
+
+                {/* ✅ CORRIGÉ: Champ Username au lieu d'Email */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-900">
-                    Adresse email
+                    Nom d'utilisateur
                   </label>
                   <div className="relative">
                     <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
+                      type="text" // ✅ CORRIGÉ: type text au lieu d'email
+                      name="username" // ✅ CORRIGÉ: name username au lieu d'email
+                      value={formData.username} // ✅ CORRIGÉ: value username
                       onChange={handleChange}
                       className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-300 ${
-                        errors.email 
+                        errors.username  // ✅ CORRIGÉ: errors.username
                           ? 'border-red-400 bg-red-50 focus:border-red-400' 
                           : 'border-gray-200 focus:border-emerald-400'
                       }`}
-                      placeholder="votre@email.com"
+                      placeholder="votre_nom_utilisateur" // ✅ CORRIGÉ: placeholder mis à jour
                     />
-                    {errors.email && (
+                    {errors.username && ( // ✅ CORRIGÉ: errors.username
                       <p className="text-red-500 text-sm mt-2 flex items-center">
                         <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2 flex-shrink-0"></span>
-                        {errors.email}
+                        {errors.username} {/* ✅ CORRIGÉ: errors.username */}
                       </p>
                     )}
                   </div>
@@ -240,7 +327,7 @@ const LoginPage = () => {
                     </>
                   )}
                 </button>
-              </div>
+              </form>
 
               {/* Lien d'inscription centré */}
               <div className="text-center mt-8 p-6 bg-gradient-to-r from-slate-50 to-emerald-50 rounded-xl border border-gray-100">
