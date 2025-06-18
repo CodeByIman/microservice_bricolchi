@@ -10,7 +10,7 @@ import AnnonceListPage from './pages/AnnonceListPage';
 import AnnonceDetailPage from './pages/AnnonceDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import DemandesCandidatures from './pages/DemandesCandidatures';
-import LoginForm from "./components/LoginForm";
+
 
 function AppRoutes() {
   const { loading } = useAuth();
@@ -23,7 +23,6 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/loginA" element={<LoginForm />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/annonces" element={<AnnonceListPage />} />
